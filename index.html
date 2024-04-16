@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Splitter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* Hide overflow to prevent scrolling */
+    }
+    #canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    let img;
+    let rows = 15;
+    let cols = 15;
+    let spacing = 0 // Adjust the spacing here
+    let tiles = [];
+    let selectedTile = null;
+    let offsetX = 0;
+    let offsetY = 0;
+    let windowPadding = 7; // Padding around the image inside the window
+    let closeButtonSizeRatio = 0.06; // Ratio of the close button size to the window size
+    let minimizeButtonSizeRatio = 0.06; // Ratio of the minimize button size to the window size
+    let fullscreenButtonSizeRatio = 0.06; // Ratio of the fullscreen button size to the window size
+
+    function preload() {
+      img = loadImage('landscape.jpeg');
+    }
+
+    function setup() {
+  createCanvas(windowWidth, windowHeight);
+  
+  // Resize the image to fit the canvas
+  let targetWidth = width * 0.9; // Adjust the target width percentage as needed
+  let targetHeight = height * 0.9; // Adjust the target height percentage as needed
+  img.resize(targetWidth, targetHeight);
+  
+  // Center the image on the canvas
+  let xCenter = (width - img.width) / 2;
+  let yCenter = (height - img.height) / 2;
+  
+  // Create tiles with varying dimensions
+  let tileSizeX = img.width / cols;
+  let tileSizeY = img.height / rows;
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      let xOffset = random(-5, 5); // Random offset for x position
+      let yOffset = random(-5, 5); // Random offset for y position
+      let randFactorX = random(0.5, 2.3); // Random factor to adjust tile width
+      let randFactorY = random(0.5, 2.3); // Random factor to adjust tile height
+      let tileWidth = tileSizeX * randFactorX;
+      let tileHeight = tileSizeY * randFactorY;
+      let tileImg = img.get(x * tileSizeX, y * tileSizeY, tileSizeX, tileSizeY);
+      let tileX = xCenter + x * (targetWidth / cols) + xOffset;
+      let tileY = yCenter + y * (targetHeight / rows) + yOffset;
+      tiles.push(new Tile(tileX, tileY, tileWidth, tileHeight, tileImg));
+    }
+  }
+}
+
+    function draw() {
+      background(255);
+      
+      // Draw the tiles
+      for (let tile of tiles) {
+        tile.show();
+      }
+    }
+
+    function mousePressed() {
+      for (let i = tiles.length - 1; i >= 0; i--) {
+        let tile = tiles[i];
+        if (tile.contains(mouseX, mouseY)) {
+          selectedTile = tile;
+          offsetX = mouseX - selectedTile.x;
+          offsetY = mouseY - selectedTile.y;
+          break;
+        }
+      }
+    }
+
+    function mouseDragged() {
+      if (selectedTile) {
+        selectedTile.x = mouseX - offsetX;
+        selectedTile.y = mouseY - offsetY;
+      }
+    }
+
+    function mouseReleased() {
+      selectedTile = null;
+    }
+
+    class Tile {
+      constructor(x, y, w, h, img) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.img = img;
+        this.windowWidth = w; // Adjusted window width
+        this.windowHeight = h + windowPadding * 2; // Adjusted window height
+      }
+
+      show() {
+        if (this.img) {
+          // Draw window frame if there is an image
+          fill("pink");
+          stroke(0); // Stroke for the header
+          strokeWeight(1.5);
+          rect(this.x, this.y - windowPadding, this.windowWidth, this.windowHeight - windowPadding, 2);
+          strokeWeight(0.7);
+          // Draw close button
+          let closeButtonSize = this.windowHeight * closeButtonSizeRatio;
+          let heightsubtract = this.windowHeight * 0.015;
+          fill(255, 0, 0); // Red for close button
+          ellipse(this.x + closeButtonSize / 2, this.y - windowPadding + closeButtonSize / 2 + heightsubtract, closeButtonSize);
+
+          // Draw minimize button
+          let minimizeButtonSize = this.windowHeight * minimizeButtonSizeRatio;
+          fill(255, 255, 0); // Yellow for minimize button
+          ellipse(this.x + closeButtonSize + minimizeButtonSize / 2 + windowPadding,  this.y - windowPadding + closeButtonSize / 2 + heightsubtract, minimizeButtonSize);
+
+          // Draw fullscreen button
+          let fullscreenButtonSize = this.windowHeight * fullscreenButtonSizeRatio;
+          fill(0, 255, 0); // Green for fullscreen button
+          ellipse(this.x + closeButtonSize + minimizeButtonSize + fullscreenButtonSize / 2 + windowPadding * 2,  this.y - windowPadding + closeButtonSize / 2 + heightsubtract, fullscreenButtonSize);
+
+          // Draw image inside the window
+          stroke(0);
+          strokeWeight(1.5);
+          noFill();
+          image(this.img, this.x, this.y, this.w, this.h);
+          rect(this.x, this.y, this.w, this.h, 2);
+          
+        }
+      }
+
+      contains(x, y) {
+        return (
+          x > this.x && x < this.x + this.windowWidth &&
+          y > this.y - windowPadding && y < this.y + this.windowHeight - windowPadding
+        );
+      }
+    }
+  </script>
+</body>
+</html>
